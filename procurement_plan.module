@@ -1,0 +1,561 @@
+<?php
+
+/**
+ * @file
+ * Procurement Plan module functions.
+ */
+
+/**
+ * Implements hook_entity_info().
+ */
+function procurement_plan_entity_info() {
+  return array(
+    'procurement_plan' => array(
+      'label' => t('Procurement Plan', array(), array('context' => 'a drupal procurement plan entity')),
+      'entity class' => 'ProcurementPlan',
+      'controller class' => 'ProcurementPlanController',
+      'base table' => 'procurement_plan',
+      'revision table' => 'procurement_plan_revision',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'ppid',
+        'bundle' => 'type',
+        'revision' => 'revision_id',
+      ),
+      'bundle keys' => array(
+        'bundle' => 'type',
+      ),
+      'bundles' => array(),
+      'load hook' => 'procurement_plan_load',
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Default'),
+          'custom settings' => FALSE,
+        ),
+      ),
+      'access callback' => 'procurement_plan_access',
+      'label callback' => 'entity_class_label',
+      'uri callback' => 'entity_class_uri',
+      'module' => 'procurement_plan',
+      'permission labels' => array(
+        'singular' => t('Plan'),
+        'plural' => t('Plans'),
+      ),
+    ),
+    'procurement_plan_type' => array(
+      'label' => t('Procurement Plan Type', array(), array('context' => 'a drupal procurement plan type entity')),
+      'entity class' => 'ProcurementPlanType',
+      'controller class' => 'ProcurementPlanTypeController',
+      'base table' => 'procurement_plan_type',
+      'fieldable' => FALSE,
+      'bundle of' => 'procurement_plan',
+      'exportable' => TRUE,
+      'entity keys' => array(
+        'id' => 'tid',
+        'name' => 'type',
+        'label' => 'label',
+      ),
+      'module' => 'procurement_plan',
+      'admin ui' => array(
+        'path' => 'admin/structure/procurement-plan-types',
+        'file' => 'procurement_plan.admin.inc',
+        'controller class' => 'ProcurementPlanTypeUIController',
+      ),
+      'access callback' => 'procurement_plan_type_access',
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function procurement_plan_entity_info_alter(&$entity_info) {
+  foreach (procurement_plan_types() as $type => $info) {
+    $entity_info['procurement_plan']['bundles'][$type] = array(
+      'label' => $info->label,
+      'admin' => array(
+        'path' => 'admin/structure/procurement-plan-types/manage/%procurement_plan_type',
+        'real path' => 'admin/structure/procurement-plan-types/manage/' . $type,
+        'bundle argument' => 4,
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function procurement_plan_menu() {
+  $items = array();
+
+  $items['procurement-plan/add'] = array(
+    'title' => 'Add task',
+    'page callback' => 'procurement_plan_admin_add_page',
+    'access arguments' => array('administer procurement_plan entities'),
+    'file' => 'procurement_plan.admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+    'tab_parent' => 'task',
+    'tab_root' => 'task',
+  );
+
+  $procurement_plan_uri = 'procurement-plan/%procurement_plan';
+  $procurement_plan_uri_argument_position = 1;
+
+  $items[$procurement_plan_uri] = array(
+    'title callback' => 'entity_label',
+    'title arguments' => array('procurement_plan', $procurement_plan_uri_argument_position),
+    'page callback' => 'procurement_plan_view',
+    'page arguments' => array($procurement_plan_uri_argument_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('view', 'procurement_plan', $procurement_plan_uri_argument_position),
+    'file' => 'procurement_plan.pages.inc',
+  );
+
+  $items[$procurement_plan_uri . '/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items[$procurement_plan_uri . '/delete'] = array(
+    'title' => 'Delete plan',
+    'title callback' => 'procurement_plan_label',
+    'title arguments' => array($procurement_plan_uri_argument_position),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('procurement_plan_delete_form', $procurement_plan_uri_argument_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('edit', 'procurement_plan', $procurement_plan_uri_argument_position),
+    'file' => 'procurement_plan.admin.inc',
+  );
+
+  $items[$procurement_plan_uri . '/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('procurement_plan_form', $procurement_plan_uri_argument_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('edit', 'procurement_plan', $procurement_plan_uri_argument_position),
+    'file' => 'procurement_plan.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+
+  foreach (procurement_plan_types() as $type => $info) {
+    $items['procurement-plan/add/' . $type] = array(
+      'title' => 'Add plan',
+      'page callback' => 'procurement_plan_add',
+      'page arguments' => array(2),
+      'access callback' => 'entity_access',
+      'access arguments' => array('create', 'procurement_plan', $type),
+      'file' => 'procurement_plan.admin.inc',
+    );
+  }
+
+  $items['admin/structure/procurement-plan-types/%procurement_plan_type/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('procurement_plan_type_form_delete_confirm', 4),
+    'access arguments' => array('administer procurement_plan types'),
+    'weight' => 1,
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'procurement_plan.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_admin_paths()
+ */
+function procurement_plan_admin_paths() {
+  return array(
+    'procurement-plan/*' => TRUE,
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function procurement_plan_permission() {
+  $permissions = array(
+    'administer procurement_plan entities' => array(
+      'title' => t('Administer procurement_plan entities'),
+      'description' => t('Allows users to configure procurement_plan all things.'),
+      'restrict access' => TRUE,
+    ),
+    'administer procurement_plan types' => array(
+      'title' => t('Administer procurement_plan types'),
+      'description' => t('Allows users to configure procurement_plan types and their fields.'),
+      'restrict access' => TRUE,
+    ),
+    'create procurement_plan entities' => array(
+      'title' => t('Create plans'),
+      'description' => t('Allows users to create plans.'),
+      'restrict access' => TRUE,
+    ),
+    'view procurement_plan entities' => array(
+      'title' => t('View plans'),
+      'description' => t('Allows users to view plans.'),
+      'restrict access' => TRUE,
+    ),
+    'edit any procurement_plan entities' => array(
+      'title' => t('Edit any plans'),
+      'description' => t('Allows users to edit any plans.'),
+      'restrict access' => TRUE,
+    ),
+    'edit own procurement_plan entities' => array(
+      'title' => t('Edit own plans'),
+      'description' => t('Allows users to edit own plans.'),
+      'restrict access' => TRUE,
+    ),
+  );
+  return $permissions;
+}
+
+
+/**
+ * Access callback for Procurement plan
+ */
+function procurement_plan_access($op, $plan, $account = NULL, $entity_type = NULL) {
+  global $user;
+
+  if (!isset($account)) {
+    $account = $user;
+  }
+  switch ($op) {
+    case 'create':
+      return user_access('administer procurement plan entities', $account)
+        || user_access('create procurement plan entities', $account);
+    case 'view':
+      return user_access('administer procurement plan entities', $account)
+        || user_access('view procurement plan entities', $account);
+    case 'edit':
+      return user_access('administer procurement plan entities')
+        || user_access('edit any procurement plan entities')
+        || (user_access('edit own procurement plan entities') && ($plan->uid == $account->uid));
+  }
+}
+
+/**
+ * Access callback for procumrent plan type
+ */
+function procurement_plan_type_access($op, $entity = NULL) {
+  return user_access('administer procurement_plan types');
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function procurement_plan_field_extra_fields() {
+  $extra = array();
+
+  foreach (procurement_plan_types() as $type) {
+    $extra['procurement_plan'][$type->type] = array(
+      'form' => array(
+        'title' => array(
+          'label' => t('Title'),
+          'description' => t('Title of Procurement plan'),
+          'weight' => -5,
+        ),
+        'plan_number' => array(
+          'label' => t('Plan Number'),
+          'description' => t('Number of Procurement plan'),
+          'weight' => -4,
+        ),
+      ),
+      'display' => array(
+        'title' => array(
+          'label' => t('Title'),
+          'description' => t('Title of Procurement plan'),
+          'weight' => 0,
+        ),
+        'plan_number' => array(
+          'label' => t('Plan Number'),
+          'description' => t('Number of Procurement plan'),
+          'weight' => 0,
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+
+/**
+ * Implements hook_webform_submission_actions()
+ */
+function procurement_plan_webform_submission_actions($node, $submission) {
+  if (webform_results_access($node)) {
+    $actions['procurement_create'] = array(
+      'title' => t('Create New Procurement Plan'),
+      'href' => 'procurement-plan/add',
+      'query' => array(
+        'sid' => $submission->sid,
+        'nid' => $node->nid,
+      )
+    );
+  }
+
+  return $actions;
+}
+
+/**
+ * Preprocess handler for theme webform_results_submissions.
+ */
+function procurement_plan_preprocess_webform_results_submissions(&$vars) {
+  $destination = drupal_get_destination();
+
+  $operation_total = &$vars['table']['#operation_total'];
+
+  foreach ($vars['table']['#rows'] as $i => $row) {
+    // TODO 如果处理了翻译，这个判断就永远失效了.
+    if (!strpos($row[0], 'draft')) {
+      $operation_count = $operation_total;
+
+      $vars['table']['#rows'][$i][] = l(
+        t('Create Procurement Plan'), "procurement-plan/add", array(
+          'query' => array(
+            'nid' => $vars['node']->nid,
+            'sid' => $row[0],
+          )
+        ));
+    }
+  }
+  $vars['table']['#header'][count($vars['table']['#header']) - 1]['colspan'] = ++ $operation_total;
+}
+
+/**
+ * Returns an array of some or all of the plan statuses keyed by name.
+ */
+function procurement_plan_statuses() {
+  // First check the static cache for an order statuses array.
+  $plan_statuses = &drupal_static(__FUNCTION__);
+
+  // If it did not exist, fetch the statuses now.
+  if (!isset($plan_statuses)) {
+    $plan_statuses = module_invoke_all('procurement_plan_status_info');
+
+    // Merge in defaults.
+    foreach ($plan_statuses as $name => $plan_status) {
+      // Set some defaults for the checkout pane.
+      $defaults = array(
+        'weight' => 0,
+        'status' => TRUE,
+      );
+      $plan_status += $defaults;
+
+      $plan_statuses[$name] = $plan_status;
+    }
+
+    // Give other modules a chance to alter the order statuses.
+    drupal_alter('procurement_plan_status_info', $plan_statuses);
+
+    uasort($plan_statuses, 'drupal_sort_weight');
+  }
+
+  return $plan_statuses;
+}
+
+/**
+ * Implements hook_procurement_plan_status_info().
+ */
+function procurement_plan_procurement_plan_status_info() {
+  $plan_statuses = array();
+
+  $plan_statuses['canceled'] = array(
+    'name' => 'canceled',
+    'title' => t('Canceled'),
+    'state' => 'canceled',
+  );
+
+  $plan_statuses['pending'] = array(
+    'name' => 'pending',
+    'title' => t('Pending'),
+    'state' => 'pending',
+  );
+  $plan_statuses['processing'] = array(
+    'name' => 'processing',
+    'title' => t('Processing'),
+    'state' => 'pending',
+    'weight' => 5,
+  );
+
+  $plan_statuses['completed'] = array(
+    'name' => 'completed',
+    'title' => t('Completed'),
+    'state' => 'completed',
+  );
+
+  return $plan_statuses;
+}
+
+/**
+ * Receive status of procurement plan titles.
+ */
+function procurement_plan_status_get_title() {
+  $plan_statuses = procurement_plan_statuses();
+
+  // Return a status title if specified and it exists.
+  if (!empty($name)) {
+    if (isset($plan_statuses[$name])) {
+      return $plan_statuses[$name]['title'];
+    }
+    else {
+      // Return FALSE if it does not exist.
+      return FALSE;
+    }
+  }
+
+  // Otherwise turn the array values into the status title only.
+  foreach ($plan_statuses as $key => $value) {
+    $plan_statuses[$key] = $value['title'];
+  }
+
+  return $plan_statuses;
+}
+
+/**
+ * Returns the human readable title of any or all plan states.
+ *
+ * @param $name
+ *   Optional parameter specifying the name of the plan state whose title
+ *     should be return.
+ *
+ * @return
+ *   Either an array of all plan state titles keyed by name or a string
+ *     containing the human readable title for the specified state. If a state
+ *     is specified that does not exist, this function returns FALSE.
+ */
+function procurement_plan_state_get_title($name = NULL) {
+  $plan_states = procurement_plan_states();
+
+  // Return a state title if specified and it exists.
+  if (!empty($name)) {
+    if (isset($plan_states[$name])) {
+      return $plan_states[$name]['title'];
+    }
+    else {
+      // Return FALSE if it does not exist.
+      return FALSE;
+    }
+  }
+
+  // Otherwise turn the array values into the status title only.
+  foreach ($plan_states as $key => $value) {
+    $plan_states[$key] = $value['title'];
+  }
+
+  return $plan_states;
+}
+
+/**
+ * Returns an array of all the plan states keyed by name.
+ *
+ * Plan states can only be defined by modules but may have settings overridden
+ * that are stored in the database (weight and the default status). When this
+ * function is first called, it will load all the states as defined by
+ * hook_procurememnt_plan_state_info() and update them based on the data in the
+ * database. The final array will be cached for subsequent calls.
+ */
+function procurement_plan_states() {
+  // First check the static cache for an plan states array.
+  $plan_states = &drupal_static(__FUNCTION__);
+
+  // If it did not exist, fetch the statuses now.
+  if (empty($plan_states)) {
+    $plan_states = module_invoke_all('procurement_plan_state_info');
+
+    // Give other modules a chance to alter the plan states.
+    drupal_alter('procurememnt_plan_state_info', $plan_states);
+
+    uasort($plan_states, 'drupal_sort_weight');
+  }
+
+  return $plan_states;
+}
+
+/**
+ * Implements hook_procurement_plan_state_info().
+ */
+function procurement_plan_procurement_plan_state_info() {
+  $plan_states = array();
+
+  $plan_states['canceled'] = array(
+    'name' => 'canceled',
+    'title' => t('Canceled'),
+    'description' => t('Orders in this state have been canceled through some user action.'),
+    'weight' => -10,
+    'default_status' => 'canceled',
+  );
+  $plan_states['pending'] = array(
+    'name' => 'pending',
+    'title' => t('Pending'),
+    'description' => t('Orders in this state have been created and are awaiting further action.'),
+    'weight' => 0,
+    'default_status' => 'pending',
+  );
+  $plan_states['completed'] = array(
+    'name' => 'completed',
+    'title' => t('Completed'),
+    'description' => t('Orders in this state have been completed as far as the customer is concerned.'),
+    'weight' => 10,
+    'default_status' => 'completed',
+  );
+
+  return $plan_states;
+}
+
+/**
+ * Implements hook_load()
+ */
+function procurement_plan_load($ppid, $reset = FALSE) {
+  $plans = procurement_plan_load_multiple(array($ppid), array(), $reset);
+  return reset($plans);
+}
+
+function procurement_plan_load_multiple($ppids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('procurement_plan', $ppids, $conditions, $reset);
+}
+
+function procurement_plan_type_load($type) {
+  return procurement_plan_types($type);
+}
+
+function procurement_plan_types($type = NULL) {
+  $types = entity_load_multiple_by_name('procurement_plan_type', isset($type) ? array($type) : FALSE);
+  return isset($type) ? reset($types) : $types;
+}
+
+function procurement_plan_save($plan) {
+  return entity_save('procurement_plan', $plan);
+}
+
+function procurement_plan_delete($plan) {
+  return entity_delete('procurement_plan', $plan->ppid);
+}
+
+function procurement_plan_type_save($type) {
+  return entity_save('procurement_plan_type', $type);
+}
+
+function procurement_plan_status_update($plan, $name, $skip_save = FALSE, $revision = NULL, $log = '') {
+  if (!isset($revision)) {
+    $revision = variable_get('procurement_plan_auto_revision', TRUE);
+  }
+
+  // Do not update the status if the plan is already at it.
+  if ($plan->status != $name) {
+    $plan->status = $name;
+
+    if (!$skip_save) {
+      // If the status update should create a new revision, update the plan
+      // object to reflect this and include a log message.
+      if ($revision) {
+        $plan->revision = TRUE;
+        $plan->log = $log;
+      }
+
+      procurement_plan_save($plan);
+    }
+  }
+
+  return $plan;
+}

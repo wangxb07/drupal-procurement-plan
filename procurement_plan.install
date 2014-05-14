@@ -1,0 +1,220 @@
+<?php
+
+/**
+ * @file
+ * Procurement Plan module installation file.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function procurement_plan_schema() {
+  $schema = array();
+
+  $schema['procurement_plan'] = array(
+    'description' => 'The base table for procurement plan.',
+    'fields' => array(
+      'ppid' => array(
+        'description' => 'The primary identifier for a procurement plan.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_id' => array(
+        'description' => 'The current {procurement_plan_revision}.revision_id version identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+      'sid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+      'title' => array(
+        'description' => 'The title of this procurement plan',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'plan_number' => array(
+        'description' => 'The number of this procurement plan',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'description' => 'The status name of this procurement plan.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that owns this plan.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'type' => array(
+        'description' => 'The module defined type of this procurement plan.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the plan was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the plan was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'unique keys' => array(
+      'plan_number' => array('plan_number'),
+      'revision_id' => array('revision_id'),
+    ),
+    'primary key' => array('ppid'),
+    'indexes' => array(
+      'sid_nid' => array('sid', 'nid'),
+      'uid' => array('uid'),
+    ),
+    'foreign keys' => array(
+      'current_revision' => array(
+        'table' => 'procurement_plan_revision',
+        'columns'=> array('revision_id' => 'revision_id'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  $schema['procurement_plan_revision'] = array(
+    'description' => 'Saves information about each saved revision of a {procurement_plan}.',
+    'fields' => array(
+      'ppid' => array(
+        'description' => 'The {procurement_plan}.order_id of the order this revision belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'plan_number' => array(
+        'description' => 'The order number displayed to the customer for this revision.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'revision_id' => array(
+        'description' => 'The primary identifier for this revision.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_uid' => array(
+        'description' => 'The {users}.uid that owns the order at this revision.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'mail' => array(
+        'description' => 'The e-mail address associated with the plan at this revision.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'The status name of this revision.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'log' => array(
+        'description' => 'The log entry explaining the changes in this version.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+      ),
+      'revision_timestamp' => array(
+        'description' => 'The Unix timestamp when this revision was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'revision_hostname' => array(
+        'description' => 'The IP address that created this order.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('revision_id'),
+    'indexes' => array(
+      'ppid' => array('ppid'),
+    ),
+    'foreign keys' => array(
+      'plan' => array(
+        'table' => 'procurement_plan',
+        'columns'=> array('ppid' => 'ppid'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'revision_uid'),
+      ),
+    ),
+  );
+
+  $schema['procurement_plan_type'] = array(
+    'description' => 'Stores information about all defined procurement plan types.',
+    'fields' => array(
+      'tid' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique type ID.',
+      ),
+      'type' => array(
+        'description' => 'The machine-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'A brief description of this type.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+        'translatable' => TRUE,
+      ),
+    ) + entity_exportable_schema_fields(),
+    'primary key' => array('tid'),
+    'unique keys' => array(
+      'type' => array('type'),
+    ),
+  );
+
+  return $schema;
+}

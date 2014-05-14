@@ -1,0 +1,13 @@
+name = Procurement Plan
+description = Procurement plan entity module.
+
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = views
+dependencies[] = webform
+dependencies[] = commerce_price
+
+; Module includes
+files[] = includes/procurement_plan.controller.inc
+files[] = includes/procurement_plan_type.controller.inc
