@@ -191,9 +191,14 @@ function procurement_plan_permission() {
       'description' => t('Allows users to create plans.'),
       'restrict access' => TRUE,
     ),
-    'view procurement_plan entities' => array(
-      'title' => t('View plans'),
-      'description' => t('Allows users to view plans.'),
+    'view all procurement_plan entities' => array(
+      'title' => t('View all plans'),
+      'description' => t('Allows users to view all plans.'),
+      'restrict access' => TRUE,
+    ),
+    'view own procurement_plan entities' => array(
+      'title' => t('View own plans'),
+      'description' => t('Allows users to view own plans.'),
       'restrict access' => TRUE,
     ),
     'edit any procurement_plan entities' => array(
@@ -210,7 +215,6 @@ function procurement_plan_permission() {
   return $permissions;
 }
 
-
 /**
  * Access callback for Procurement plan
  */
@@ -226,7 +230,8 @@ function procurement_plan_access($op, $plan, $account = NULL, $entity_type = NUL
         || user_access('create procurement plan entities', $account);
     case 'view':
       return user_access('administer procurement plan entities', $account)
-        || user_access('view procurement plan entities', $account);
+        || (user_access('view own procurement plan entities', $account) && ($plan->uid == $account->uid))
+        || user_access('view all procurement plan entities', $account);
     case 'edit':
       return user_access('administer procurement plan entities')
         || user_access('edit any procurement plan entities')
