@@ -232,6 +232,11 @@ function procurement_plan_permission() {
       'description' => t('Allows users to edit own plans.'),
       'restrict access' => TRUE,
     ),
+    'toggle status any procurement_plan entities' => array(
+      'title' => t('Toggle any plans status'),
+      'description' => t('Allows users to toggle any plans status.'),
+      'restrict access' => TRUE,
+    ),
   );
   return $permissions;
 }
@@ -245,21 +250,26 @@ function procurement_plan_access($op, $plan, $account = NULL, $entity_type = NUL
   if (!isset($account)) {
     $account = $user;
   }
+
+  if ($account->uid == 1) {
+    return true;
+  }
+
   switch ($op) {
     case 'create':
-      return user_access('administer procurement plan entities', $account)
-        || user_access('create procurement plan entities', $account);
+      return user_access('administer procurement_plan entities', $account)
+        || user_access('create procurement_plan entities', $account);
     case 'view':
-      return user_access('administer procurement plan entities', $account)
-        || (user_access('view own procurement plan entities', $account) && ($plan->uid == $account->uid))
-        || user_access('view all procurement plan entities', $account);
+      return user_access('administer procurement_plan entities', $account)
+        || (user_access('view own procurement_plan entities', $account) && ($plan->uid == $account->uid))
+        || user_access('view all procurement_plan entities', $account);
     case 'edit':
-      return user_access('administer procurement plan entities')
-        || user_access('edit any procurement plan entities')
-        || (user_access('edit own procurement plan entities') && ($plan->uid == $account->uid));
+      return user_access('administer procurement_plan entities', $account)
+        || user_access('edit any procurement_plan entities', $account)
+        || (user_access('edit own procurement_plan entities', $account) && ($plan->uid == $account->uid));
     case 'status_toggle':
-      return user_access('administer procurement plan entities')
-        || user_access('toggle status any procurement plan entities');
+      return user_access('administer procurement_plan entities', $account)
+        || user_access('toggle status any procurement_plan entities', $account);
   }
 }
 

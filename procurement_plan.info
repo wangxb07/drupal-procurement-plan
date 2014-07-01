@@ -13,3 +13,6 @@ dependencies[] = rules
 files[] = includes/procurement_plan.controller.inc
 files[] = includes/procurement_plan_type.controller.inc
 files[] = includes/views/handlers/procurement_plan_handler_field_plan_status.inc
+files[] = includes/views/handlers/procurement_plan_handler_field_plan_link.inc
+files[] = includes/views/handlers/procurement_plan_handler_field_plan_link_edit.inc
+files[] = includes/views/handlers/procurement_plan_handler_field_plan_link_delete.inc

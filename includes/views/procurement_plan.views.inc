@@ -48,4 +48,31 @@ function procurement_plan_views_data_alter(&$data) {
     'handler' => 'procurement_plan_handler_field_plan_status',
   );
 
+  $data['procurement_plan']['view_procurement_plan']['moved to'] = array('views_entity_procurement_plan', 'view_procurement_plan');
+  $data['views_entity_procurement_plan']['view_procurement_plan'] = array(
+    'field' => array(
+      'title' => t('Link'),
+      'help' => t('Provide a simple link to the content.'),
+      'handler' => 'procurement_plan_handler_field_plan_link',
+    ),
+  );
+
+  $data['procurement_plan']['edit_procurement_plan']['moved to'] = array('views_entity_procurement_plan', 'edit_procurement_plan');
+  $data['views_entity_procurement_plan']['edit_procurement_plan'] = array(
+    'field' => array(
+      'title' => t('Edit link'),
+      'help' => t('Provide a simple link to edit the content.'),
+      'handler' => 'procurement_plan_handler_field_plan_link_edit',
+    ),
+  );
+
+  $data['procurement_plan']['delete_procurement_plan']['moved to'] = array('views_entity_procurement_plan', 'delete_procurement_plan');
+  $data['views_entity_procurement_plan']['delete_procurement_plan'] = array(
+    'field' => array(
+      'title' => t('Delete link'),
+      'help' => t('Provide a simple link to delete the content.'),
+      'handler' => 'procurement_plan_handler_field_plan_link_delete',
+    ),
+  );
+
 }
