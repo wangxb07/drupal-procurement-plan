@@ -5,44 +5,9 @@
  */
 
 /**
- * Implements hook_views_data()
+ * Impelements hook_views_data_alter(&$data)
  */
-function procurement_plan_views_data() {
-  $data = array();
-
-  $data['procurement_plan']['table']['group']  = t('Procurement Plan');
-
-  $data['procurement_plan']['table']['base'] = array(
-    'field' => 'ppid',
-    'title' => t('Procurement Plan'),
-    'help' => t('business procument plan'),
-    'access query tag' => 'procurement_plan_access',
-  );
-
-  $data['procurement_plan']['table']['entity type'] = 'procurement_plan';
-
-  // Expose primary key
-  $data['procurement_plan']['ppid'] = array(
-    'title' => t('Procurement Plan ID'),
-    'help' => t('The unique internal identifier of the procurement plan.'),
-    'field' => array(
-      'handler' => 'views_handler_field_numeric',
-      'click sortable' => TRUE,
-    ),
-    'filter' => array(
-      'handler' => 'views_handler_filter_numeric',
-    ),
-    'sort' => array(
-      'handler' => 'views_handler_sort',
-    ),
-    'argument' => array(
-      'handler' => 'procurement_plan_handler_argument_procurement_plan_ppid',
-      'name field' => 'title',
-      'numeric' => TRUE,
-      'validate type' => 'ppid',
-    ),
-  );
-
+function procurement_plan_views_data_alter(&$data) {
   // Expose the product type.
   $data['procurement_plan']['plan_type'] = array(
     'title' => t('Type'),
@@ -62,14 +27,25 @@ function procurement_plan_views_data() {
     ),
   );
 
-  // Expose the title.
-  $data['procurement_plan']['title'] = array(
+  $data['procurement_plan']['created'] = array(
+    'title' => t('Post date'), // The item it appears as on the UI,
+    'help' => t('The date of plan was posted.'), // The help that appears on the UI,
     'field' => array(
-      'title' => t('Title'),
-      'help' => t('The title of the procurement title.'),
-      'handler' => 'procurement_plan_handler_field_title',
+      'handler' => 'views_handler_field_date',
+      'click sortable' => TRUE,
+    ),
+  );
+  $data['procurement_plan']['changed'] = array(
+    'title' => t('Last update date'), // The item it appears as on the UI,
+    'help' => t('The date of plan last update.'), // The help that appears on the UI,
+    'field' => array(
+      'handler' => 'views_handler_field_date',
+      'click sortable' => TRUE,
     ),
   );
 
-  return $data;
+  $data['procurement_plan']['status']['field'] = array(
+    'handler' => 'procurement_plan_handler_field_plan_status',
+  );
+
 }
