@@ -297,9 +297,9 @@ function procurement_plan_webform_submission_actions($node, $submission) {
         'nid' => $node->nid,
       )
     );
-  }
 
-  return $actions;
+    return $actions;
+  }
 }
 
 /**

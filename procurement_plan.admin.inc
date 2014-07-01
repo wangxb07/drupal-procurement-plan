@@ -171,6 +171,15 @@ function procurement_plan_form($form, &$form_state, $plan) {
       '#type' => 'hidden',
       '#value' => $nid,
     );
+
+    // fill the plan name
+    if (empty($plan->name) && $submission_owner = user_load($submission->uid)) {
+      $plan->name = $submission_owner->name;
+
+      if (empty($plan->mail)) {
+        $plan->mail = $submission_owner->mail;
+      }
+    }
   }
   else {
     $query = db_select('webform', 'w');
@@ -337,7 +346,7 @@ function procurement_plan_form($form, &$form_state, $plan) {
     '#type' => 'textfield',
     '#title' => t('Plan contact e-mail'),
     '#description' => t('Defaults to the owner account e-mail address if left blank. Used for plan communication.'),
-    '#default_value' => isset($plan->mail) ? '': $plan->mail,
+    '#default_value' => isset($plan->mail) ? $plan->mail: '',
   );
 
   $form['plan_history'] = array(
