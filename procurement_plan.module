@@ -6,6 +6,16 @@
  */
 
 /**
+ * Implements hook_views_api().
+ */
+function procurement_plan_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'procurement_plan') . '/includes/views',
+  );
+}
+
+/**
  * Implements hook_entity_info().
  */
 function procurement_plan_entity_info() {
@@ -115,6 +125,17 @@ function procurement_plan_menu() {
     'title' => 'View',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
+  );
+
+  $items[$procurement_plan_uri . '/status-toggle'] = array(
+    'title' => 'Delete plan',
+    'title callback' => 'procurement_plan_label',
+    'title arguments' => array($procurement_plan_uri_argument_position),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('procurement_plan_status_toggle_confirm', $procurement_plan_uri_argument_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('status_toggle', 'procurement_plan', $procurement_plan_uri_argument_position),
+    'file' => 'procurement_plan.admin.inc',
   );
 
   $items[$procurement_plan_uri . '/delete'] = array(
@@ -236,6 +257,9 @@ function procurement_plan_access($op, $plan, $account = NULL, $entity_type = NUL
       return user_access('administer procurement plan entities')
         || user_access('edit any procurement plan entities')
         || (user_access('edit own procurement plan entities') && ($plan->uid == $account->uid));
+    case 'status_toggle':
+      return user_access('administer procurement plan entities')
+        || user_access('toggle status any procurement plan entities');
   }
 }
 
@@ -330,7 +354,7 @@ function procurement_plan_preprocess_webform_results_submissions(&$vars) {
 /**
  * Returns an array of some or all of the plan statuses keyed by name.
  */
-function procurement_plan_statuses() {
+function procurement_plan_statuses($conditions = array()) {
   // First check the static cache for an order statuses array.
   $plan_statuses = &drupal_static(__FUNCTION__);
 
@@ -354,6 +378,32 @@ function procurement_plan_statuses() {
     drupal_alter('procurement_plan_status_info', $plan_statuses);
 
     uasort($plan_statuses, 'drupal_sort_weight');
+  }
+
+  // Apply conditions to the returned statuses if specified.
+  if (!empty($conditions)) {
+    $matching_statuses = array();
+
+    foreach ($plan_statuses as $name => $plan_status) {
+      // Check the status against the conditions array to determine whether to
+      // add it to the return array or not.
+      $valid = TRUE;
+
+      foreach ($conditions as $property => $value) {
+        // If the current value for the specified property on the status does
+        // not match the filter value...
+        if ($plan_status[$property] != $value) {
+          // Do not add it to the temporary array.
+          $valid = FALSE;
+        }
+      }
+
+      if ($valid) {
+        $matching_statuses[$name] = $plan_status;
+      }
+    }
+
+    return $matching_statuses;
   }
 
   return $plan_statuses;
@@ -563,4 +613,18 @@ function procurement_plan_status_update($plan, $name, $skip_save = FALSE, $revis
   }
 
   return $plan;
+}
+
+/**
+ * Receive the status options
+ * @return array;
+ */
+function procurement_plan_status_options_list() {
+  $options = array();
+  foreach (procurement_plan_state_get_title() as $name => $title) {
+    foreach (procurement_plan_statuses(array('state' => $name)) as $plan_status) {
+      $options[check_plain($title)][$plan_status['name']] = check_plain($plan_status['title']);
+    }
+  }
+  return $options;
 }

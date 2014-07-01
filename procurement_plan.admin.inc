@@ -288,13 +288,7 @@ function procurement_plan_form($form, &$form_state, $plan) {
   );
 
   // Build an array of plan status options grouped by order state.
-  $options = array();
-
-  foreach (procurement_plan_state_get_title() as $name => $title) {
-    foreach (procurement_plan_statuses(array('state' => $name)) as $plan_status) {
-      $options[check_plain($title)][$plan_status['name']] = check_plain($plan_status['title']);
-    }
-  }
+  $options = procurement_plan_status_options_list();
 
   $form['plan_status']['status'] = array(
     '#type' => 'select',
@@ -520,4 +514,33 @@ function procurement_plan_delete_form_submit($form, &$form_state) {
   drupal_set_message(t('Plan %title deleted.', array('%title' => entity_label('procurement_plan', $plan))));
 
   $form_state['redirect'] = '<front>';
+}
+
+
+/**
+ * Form constructor for the plan status toggle confirmation form.
+ *
+ * @see procurement_plan_status_toggle_confirm_submit()
+ */
+function procurement_plan_status_toggle_confirm($form, &$form_state, $plan) {
+  $form['#plan'] = $plan;
+  // Always provide entity id in the same form key as in the entity edit form.
+  $form['ppid'] = array('#type' => 'value', '#value' => $plan->ppid);
+  return confirm_form($form,
+    t('Are you sure you want to toggle status %title?', array('%title' => $plan->title)),
+    'node/' . $plan->ppid,
+    t('This action cannot be undone.'),
+    t('Toggle'),
+    t('Cancel')
+  );
+}
+
+/**
+ * Executes procurement plan deletion.
+ *
+ * @see procurement_plan_status_toggle_confirm()
+ */
+function procurement_plan_status_toggle_confirm_submit($form, &$form_state) {
+  rules_invoke_event('procurement_plan_status_toggle', $form['#plan']);
+  $form_state['redirect'] = 'admin/purchase-plan/all';
 }

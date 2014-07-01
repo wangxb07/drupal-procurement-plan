@@ -7,7 +7,9 @@ dependencies[] = entity
 dependencies[] = views
 dependencies[] = webform
 dependencies[] = commerce_price
+dependencies[] = rules
 
 ; Module includes
 files[] = includes/procurement_plan.controller.inc
 files[] = includes/procurement_plan_type.controller.inc
+files[] = includes/views/handlers/procurement_plan_handler_field_plan_status.inc
