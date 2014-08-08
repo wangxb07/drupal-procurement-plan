@@ -39,7 +39,7 @@ class procurement_plan_handler_field_plan_status extends views_handler_field {
   }
 
   function render($values) {
-    $value = $this->get_value($values);
+    $value = t($this->get_value($values));
     $ppid = $this->get_value($values, 'ppid');
 
     $plan = procurement_plan_load($ppid);

@@ -269,44 +269,46 @@ function procurement_plan_form($form, &$form_state, $plan) {
     '#weight' => 99,
   );
 
-  $form['plan_status'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Plan status'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-    '#group' => 'additional_settings',
-    '#attached' => array(
-      'js' => array(
-        drupal_get_path('module', 'procurement_plan') . '/procurement_plan.js',
-        array(
-          'type' => 'setting',
-          'data' => array('status_titles' => procurement_plan_status_get_title()),
+  if (user_access('administer procurement_plan entities')) {
+    $form['plan_status'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Plan status'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#group' => 'additional_settings',
+      '#attached' => array(
+        'js' => array(
+          drupal_get_path('module', 'procurement_plan') . '/procurement_plan.js',
+          array(
+            'type' => 'setting',
+            'data' => array('status_titles' => procurement_plan_status_get_title()),
+          ),
         ),
       ),
-    ),
-    '#weight' => 20,
-  );
+      '#weight' => 20,
+    );
 
-  // Build an array of plan status options grouped by order state.
-  $options = procurement_plan_status_options_list();
+    // Build an array of plan status options grouped by order state.
+    $options = procurement_plan_status_options_list();
 
-  $form['plan_status']['status'] = array(
-    '#type' => 'select',
-    '#title' => t('Status'),
-    '#options' => $options,
-    '#default_value' => $plan->status,
-  );
-  $form['plan_status']['status_original'] = array(
-    '#type' => 'hidden',
-    '#value' => $plan->status,
-    '#attributes' => array('id' => 'edit-status-original'),
-  );
-  $form['plan_status']['log'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Update log message'),
-    '#description' => t('Provide an explanation of the changes you are making. This will provide a meaningful audit trail for updates to this plan.'),
-    '#rows' => 4,
-  );
+    $form['plan_status']['status'] = array(
+      '#type' => 'select',
+      '#title' => t('Status'),
+      '#options' => $options,
+      '#default_value' => $plan->status,
+    );
+    $form['plan_status']['status_original'] = array(
+      '#type' => 'hidden',
+      '#value' => $plan->status,
+      '#attributes' => array('id' => 'edit-status-original'),
+    );
+    $form['plan_status']['log'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Update log message'),
+      '#description' => t('Provide an explanation of the changes you are making. This will provide a meaningful audit trail for updates to this plan.'),
+      '#rows' => 4,
+    );
+  }
 
   $form['user'] = array(
     '#type' => 'fieldset',
@@ -422,9 +424,26 @@ function submission_webforms_select_callback($form, $form_state) {
  * Procurement plan form validate handler.
  */
 function procurement_plan_form_validate($form, &$form_state) {
+  $form_state['values']['nid'] = $form_state['values']['webform'];
+
   // if sid is null, nid set to null too.
   if (!empty($form_state['values']['nid']) && empty($form_state['values']['sid'])) {
     $form_state['values']['nid'] = 0;
+  }
+
+  // process sid values
+  $sids = isset($form_state['values']['sid']) ? $form_state['values']['sid'] : 0;
+  if (is_array($sids)) {
+    foreach ($sids as $i => $sid) {
+      if ($sid == TRUE) {
+        $form_state['values']['sid'] = $i;
+        break;
+      }
+    }
+  }
+
+  if (empty($form_state['values']['sid'])) {
+    form_set_error(NULL, t('Submission must be selected.'));
   }
 }
 

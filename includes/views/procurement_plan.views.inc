@@ -75,4 +75,26 @@ function procurement_plan_views_data_alter(&$data) {
     ),
   );
 
+  $data['procurement_plan']['uid'] = array(
+    'title' => t('Author uid'),
+    'help' => t('The user authoring the content. If you need more fields than the uid add the content: author relationship'),
+    'relationship' => array(
+      'title' => t('Author'),
+      'help' => t('Relate content to the user who created it.'),
+      'handler' => 'views_handler_relationship',
+      'base' => 'users',
+      'field' => 'uid',
+      'label' => t('author'),
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_user_name',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+    'field' => array(
+      'handler' => 'views_handler_field_user',
+    ),
+  );
+
 }
