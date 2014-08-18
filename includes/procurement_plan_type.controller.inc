@@ -22,11 +22,11 @@ class ProcurementPlanTypeController extends EntityAPIControllerExportable {
     if ($entity->is_new) {
       commerce_price_create_instance('procurement_plan_total', 'procurement_plan', $entity->type, t('Total Amount'));
     }
-    parent::save($entity, $transaction);
     // Rebuild menu registry. We do not call menu_rebuild directly, but set
     // variable that indicates rebuild in the end.
     // @see http://drupal.org/node/1399618
     variable_set('menu_rebuild_needed', TRUE);
+    return parent::save($entity, $transaction);
   }
 }
 

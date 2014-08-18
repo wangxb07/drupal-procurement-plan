@@ -37,6 +37,49 @@ function procurement_plan_type_form($form, &$form_state, $plan_type, $op = 'edit
     '#description' => t('Description about the plan type.'),
   );
 
+  $form['plan_number_increment'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Plan number settings'),
+    '#tree' => TRUE,
+  );
+
+  $form['plan_number_increment']['enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable increment'),
+    '#default_value' => isset($plan_type->plan_number_increment_enabled) ? $plan_type->plan_number_increment_enabled : FALSE,
+    '#description' => t('Whether to configure auto-incremented plan number.'),
+  );
+
+  $form['plan_number_increment']['config'] = array(
+    '#type' => 'container',
+    '#parents' => array('plan_number_increment'),
+    '#states' => array(
+      'invisible' => array(
+        'input[name="plan_number_increment[enabled]"]' => array('checked' => FALSE),
+      ),
+    ),
+  );
+  $form['plan_number_increment']['config']['default'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Default value'),
+    '#default_value' => !empty($plan_type->plan_number_increment_default)?$plan_type->plan_number_increment_default:'',
+    '#element_validate' => array('token_element_validate'),
+    '#after_build' => array('token_element_validate'),
+    '#token_types' => array('procurement_plan'),
+    '#min_tokens' => 1,
+  );
+
+  $form['plan_number_increment']['config']['token_help'] = array(
+    '#title' => t('Replacement patterns'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['plan_number_increment']['config']['token_help']['help'] = array(
+    '#theme' => 'token_tree',
+    '#token_types' => array('procurement_plan'),
+  );
+
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
@@ -71,6 +114,9 @@ function procurement_plan_type_form_validate(&$form, &$form_state) {
 function procurement_plan_type_form_submit(&$form, &$form_state) {
   $plan_type = entity_ui_form_submit_build_entity($form, $form_state);
   // Save and go back.
+  $plan_type->plan_number_increment_enabled = $plan_type->plan_number_increment['enabled'];
+  $plan_type->plan_number_increment_default = $plan_type->plan_number_increment['default'];
+
   procurement_plan_type_save($plan_type);
 
   // Redirect user back to list of plan types.
@@ -117,6 +163,7 @@ function procurement_plan_add($type) {
 function procurement_plan_form($form, &$form_state, $plan) {
   $params = drupal_get_query_parameters();
   $form_state['plan'] = $plan;
+  $plan_type = procurement_plan_type_load($plan->type);
 
   // Ensure the owner name is accessible if the uid is set.
   if (!empty($plan->uid) && $owner = user_load($plan->uid)) {
@@ -254,6 +301,10 @@ function procurement_plan_form($form, &$form_state, $plan) {
     '#title' => t('Name'),
     '#default_value' => $plan->title,
   );
+
+  if ($plan_type->plan_number_increment_enabled && empty($plan->plan_number)) {
+    $plan->plan_number = token_replace($plan_type->plan_number_increment_default, array('procurement_plan' => $plan));
+  }
 
   $form['plan_number'] = array(
     '#type' => 'textfield',

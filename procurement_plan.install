@@ -209,6 +209,20 @@ function procurement_plan_schema() {
         'size' => 'medium',
         'translatable' => TRUE,
       ),
+      'plan_number_increment_enabled' => array(
+        'description' => 'Determine whether to use the default increment value.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+        'not null' => TRUE,
+      ),
+      'plan_number_increment_default' => array(
+        'description' => 'default increment value rule.',
+        'type' => 'varchar',
+        'default' => '',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
     ) + entity_exportable_schema_fields(),
     'primary key' => array('tid'),
     'unique keys' => array(
@@ -217,4 +231,24 @@ function procurement_plan_schema() {
   );
 
   return $schema;
+}
+
+/**
+ * Upgrade the plan type table add field for storage plan number increment rule.
+ */
+function procurement_plan_update_7000() {
+  db_add_field('procurement_plan_type', 'plan_number_increment_enabled', array(
+    'description' => 'Determine whether to use the default increment value.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'default' => 0,
+    'not null' => TRUE,
+  ));
+  db_add_field('procurement_plan_type', 'plan_number_increment_default', array(
+    'description' => 'default increment value rule.',
+    'type' => 'varchar',
+    'default' => '',
+    'length' => 255,
+    'not null' => TRUE,
+  ));
 }
