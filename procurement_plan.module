@@ -101,7 +101,7 @@ function procurement_plan_menu() {
   $items['procurement-plan/add'] = array(
     'title' => 'Add task',
     'page callback' => 'procurement_plan_admin_add_page',
-    'access arguments' => array('administer procurement_plan entities'),
+    'access arguments' => array('create procurement_plan entities'),
     'file' => 'procurement_plan.admin.inc',
     'type' => MENU_LOCAL_ACTION,
     'tab_parent' => 'task',
@@ -210,32 +210,32 @@ function procurement_plan_permission() {
     'create procurement_plan entities' => array(
       'title' => t('Create plans'),
       'description' => t('Allows users to create plans.'),
-      'restrict access' => TRUE,
+      'restrict access' => FALSE,
     ),
     'view all procurement_plan entities' => array(
       'title' => t('View all plans'),
       'description' => t('Allows users to view all plans.'),
-      'restrict access' => TRUE,
+      'restrict access' => FALSE,
     ),
     'view own procurement_plan entities' => array(
       'title' => t('View own plans'),
       'description' => t('Allows users to view own plans.'),
-      'restrict access' => TRUE,
+      'restrict access' => FALSE,
     ),
     'edit any procurement_plan entities' => array(
       'title' => t('Edit any plans'),
       'description' => t('Allows users to edit any plans.'),
-      'restrict access' => TRUE,
+      'restrict access' => FALSE,
     ),
     'edit own procurement_plan entities' => array(
       'title' => t('Edit own plans'),
       'description' => t('Allows users to edit own plans.'),
-      'restrict access' => TRUE,
+      'restrict access' => FALSE,
     ),
     'toggle status any procurement_plan entities' => array(
       'title' => t('Toggle any plans status'),
       'description' => t('Allows users to toggle any plans status.'),
-      'restrict access' => TRUE,
+      'restrict access' => FALSE,
     ),
   );
   return $permissions;

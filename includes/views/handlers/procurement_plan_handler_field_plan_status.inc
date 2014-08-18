@@ -44,14 +44,19 @@ class procurement_plan_handler_field_plan_status extends views_handler_field {
 
     $plan = procurement_plan_load($ppid);
 
-    if (empty($plan) || !procurement_plan_access('status_toggle', $plan)) {
+    if (empty($plan)) {
       return ;
     }
 
     if (!empty($this->options['allow_toggle'])) {
-      $this->options['alter']['make_link'] = TRUE;
-      $this->options['alter']['path'] = 'procurement-plan/' . $ppid . '/status-toggle';
-      return $this->sanitize_value($value, 'url');
+      if (procurement_plan_access('status_toggle', $plan)) {
+        $this->options['alter']['make_link'] = TRUE;
+        $this->options['alter']['path'] = 'procurement-plan/' . $ppid . '/status-toggle';
+        return $this->sanitize_value($value, 'url');
+      }
+      else {
+        return $this->sanitize_value($value);
+      }
     }
     else {
       return $this->sanitize_value($value);

@@ -40,7 +40,7 @@ class procurement_plan_handler_field_plan_link extends views_handler_field_entit
   function render_link($plan, $values) {
     if (procurement_plan_access('view', $plan)) {
       $this->options['alter']['make_link'] = TRUE;
-      $this->options['alter']['path'] = "procurement-plan/$plan->nid";
+      $this->options['alter']['path'] = "procurement-plan/$plan->ppid";
       $text = !empty($this->options['text']) ? $this->options['text'] : t('view');
       return $text;
     }
